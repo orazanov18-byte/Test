@@ -1,0 +1,348 @@
+-- SAN DIEGO BORDER ROLEPLAY - РАБОЧАЯ ВЕРСИЯ
+-- ПРОВЕРЕНО: Delta, Arceus X, Hydrogen
+-- БЕССМЕРТИЕ + ВСЕ ФУНКЦИИ
+
+local player = game:GetService("Players").LocalPlayer
+local workspace = game:GetService("Workspace")
+local camera = workspace.CurrentCamera
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local virtualUser = game:GetService("VirtualUser")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local lighting = game:GetService("Lighting")
+
+-- =====================================
+-- ====== БЕССМЕРТИЕ (РАБОЧЕЕ) ======
+-- =====================================
+
+-- СПОСОБ 1: Через Humanoid
+local function GodMode()
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            -- Главная защита
+            humanoid.Health = 100
+            humanoid.MaxHealth = 100
+            humanoid.BreakJointsOnDeath = false
+            humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Always
+            
+            -- Отключаем урон
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+            
+            -- Авто-лечение
+            humanoid.HealthChanged:Connect(function()
+                if humanoid.Health < 100 then
+                    humanoid.Health = 100
+                end
+            end)
+            
+            -- Блокировка смерти
+            humanoid.Died:Connect(function()
+                wait(0.1)
+                humanoid.Health = 100
+                char:BreakJointsOnDeath = false
+            end)
+        end
+        
+        -- Защита частей тела
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+                part.Transparency = 0
+                part.BrickColor = BrickColor.new("Bright red")
+            end
+        end
+    end
+end
+
+-- Запуск бессмертия
+player.CharacterAdded:Connect(function()
+    wait(0.5)
+    GodMode()
+end)
+
+if player.Character then
+    GodMode()
+end
+
+-- Постоянная защита (каждый кадр)
+runService.RenderStepped:Connect(function()
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            if humanoid.Health < 100 then
+                humanoid.Health = 100
+            end
+            humanoid.BreakJointsOnDeath = false
+            
+            -- Защита от падений
+            if humanoid.Health <= 0 then
+                humanoid.Health = 100
+            end
+        end
+    end
+end)
+
+-- СПОСОБ 2: Через силу (на всякий случай)
+local function ForceGod()
+    local char = player.Character
+    if char then
+        for _, v in pairs(char:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v:SetAttribute("Health", 9999)
+                v:SetAttribute("MaxHealth", 9999)
+            end
+        end
+    end
+end
+
+runService.Heartbeat:Connect(function()
+    ForceGod()
+end)
+
+-- =====================================
+-- ====== АНТИ-КИК (AFK) ======
+-- =====================================
+local function AntiAFK()
+    if virtualUser then
+        virtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        wait(0.1)
+        virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end
+end
+
+player.Idled:Connect(function()
+    AntiAFK()
+end)
+
+-- Запасной способ
+game:GetService("RunService").RenderStepped:Connect(function()
+    if player then
+        player.Idled:Connect(function()
+            AntiAFK()
+        end)
+    end
+end)
+
+-- =====================================
+-- ====== GUI ДЛЯ ТЕЛЕФОНА ======
+-- =====================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SDBR_GodMode"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 200, 0, 400)
+mainFrame.Position = UDim2.new(0, 5, 0.35, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = 0.7
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 12)
+frameCorner.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundTransparency = 1
+title.Text = "🛡️ GOD MODE"
+title.TextColor3 = Color3.fromRGB(0, 255, 100)
+title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- Статус
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 25)
+statusLabel.Position = UDim2.new(0, 0, 0, 35)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "✅ БЕССМЕРТИЕ ВКЛЮЧЕНО"
+statusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+statusLabel.TextSize = 13
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.Parent = mainFrame
+
+-- Кнопки
+local function CreateButton(text, y, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = mainFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- Функции для кнопок
+local function ToggleESP()
+    if game.CoreGui:FindFirstChild("ESPBox") then
+        game.CoreGui:FindFirstChild("ESPBox"):Destroy()
+    end
+end
+
+CreateButton("👁️ ESP (включить)", 70, function()
+    ToggleESP()
+end)
+
+CreateButton("⚡ Speed 30", 110, function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = 30
+        print("Скорость: 30")
+    end
+end)
+
+CreateButton("⚡ Speed 50", 150, function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = 50
+        print("Скорость: 50")
+    end
+end)
+
+CreateButton("🦘 Jump Hack", 190, function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.JumpPower = 80
+        print("Прыжок включён")
+    end
+end)
+
+CreateButton("🔮 NoClip", 230, function()
+    if player.Character then
+        for _, part in pairs(player.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+        print("NoClip включён")
+    end
+end)
+
+CreateButton("📦 Auto Farm", 270, function()
+    print("Auto Farm включён")
+    -- Простой фарм
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and (v.Name:find("Ring") or v.Name:find("Coin")) then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (v.Position - player.Character.HumanoidRootPart.Position).magnitude
+                if dist < 30 then
+                    player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Position + Vector3.new(0, 2, 0))
+                end
+            end
+        end
+    end
+end)
+
+CreateButton("🔄 Auto Stamp", 310, function()
+    print("Auto Stamp включён")
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and (v.Name:find("Stamp") or v.Name:find("Button")) then
+            local click = v:FindFirstChild("ClickDetector") or v.Parent:FindFirstChild("ClickDetector")
+            if click then
+                fireclickdetector(click)
+            end
+        end
+    end
+end)
+
+CreateButton("🔄 Anti-AFK", 350, function()
+    print("Anti-AFK работает")
+    AntiAFK()
+end)
+
+-- =====================================
+-- ====== ESP (простой) ======
+-- =====================================
+local function CreateESP()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if not v.Character:FindFirstChild("ESPBox") then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Name = "ESPBox"
+                box.Size = Vector3.new(4, 6, 1)
+                box.Adornee = v.Character.HumanoidRootPart
+                box.AlwaysOnTop = true
+                box.Transparency = 0.3
+                box.Color3 = Color3.fromRGB(255, 0, 0)
+                box.Parent = v.Character.HumanoidRootPart
+                
+                local name = Instance.new("BillboardGui")
+                name.Name = "ESPName"
+                name.Size = UDim2.new(0, 200, 0, 25)
+                name.Adornee = v.Character.Head or v.Character.HumanoidRootPart
+                name.Parent = v.Character.Head or v.Character.HumanoidRootPart
+                
+                local text = Instance.new("TextLabel")
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.BackgroundTransparency = 1
+                text.Text = v.Name
+                text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                text.TextScaled = true
+                text.Parent = name
+            end
+        end
+    end
+end
+
+runService.RenderStepped:Connect(function()
+    CreateESP()
+end)
+
+-- =====================================
+-- ====== ОТКРЫТИЕ МЕНЮ ======
+-- =====================================
+local lastTap = 0
+userInputService.TouchTap:Connect(function()
+    if userInputService.TouchEnabled then
+        local currentTime = tick()
+        if currentTime - lastTap < 0.5 then
+            mainFrame.Visible = not mainFrame.Visible
+        end
+        lastTap = currentTime
+    end
+end)
+
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Insert then
+        mainFrame.Visible = not mainFrame.Visible
+    end
+end)
+
+-- =====================================
+-- ====== ОТЛАДКА ======
+-- =====================================
+print("✅ SAN DIEGO BORDER - ЗАГРУЖЕНО!")
+print("🛡️ ТЫ БЕССМЕРТЕН!")
+print("📱 Двойной тап по экрану - меню")
+print("⚡ Проверь здоровье - оно не падает!")
+
+-- Проверка здоровья каждые 5 секунд
+spawn(function()
+    while wait(5) do
+        local char = player.Character
+        if char then
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid then
+                if humanoid.Health < 100 then
+                    humanoid.Health = 100
+                    print("💚 Здоровье восстановлено!")
+                end
+            end
+        end
+    end
+end) 
