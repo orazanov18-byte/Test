@@ -1,0 +1,397 @@
+-- BLOXSTRIKE СКРИПТ С ПРОВЕРКОЙ КОМАНДЫ (НЕ РАБОТАЕТ НА СВОИХ)
+-- Работает на телефоне и ПК (Delta, Arceus X, Hydrogen)
+
+local player = game:GetService("Players").LocalPlayer
+local workspace = game:GetService("Workspace")
+local camera = workspace.CurrentCamera
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+
+-- ===== НАСТРОЙКИ =====
+local Settings = {
+    Aimbot = true,
+    InfiniteJump = true,
+    ESP = true,
+    NoRecoil = true,
+    SpeedHack = false,
+    SpeedValue = 25,
+    NoFlash = true,
+    TeamCheck = true,  -- НЕ РАБОТАЕТ НА СВОИХ (тимах)
+}
+
+-- ===== ПРОВЕРКА КОМАНДЫ =====
+local function IsEnemy(target)
+    if not Settings.TeamCheck then return true end
+    
+    -- Проверяем через Team
+    if target.Team and player.Team then
+        if target.Team == player.Team then
+            return false -- Свои!
+        end
+    end
+    
+    -- Проверка через имя команды (для некоторых игр)
+    if target.TeamColor and player.TeamColor then
+        if target.TeamColor == player.TeamColor then
+            return false
+        end
+    end
+    
+    -- Дополнительная проверка через неймтеги
+    if target.Team and player.Team then
+        if target.Team.Name == player.Team.Name then
+            return false
+        end
+    end
+    
+    -- Проверка через цвет (BloxStrike)
+    local playerColor = player.Character and player.Character:FindFirstChild("Head") and player.Character.Head.BrickColor
+    local targetColor = target.Character and target.Character:FindFirstChild("Head") and target.Character.Head.BrickColor
+    
+    if playerColor and targetColor then
+        if playerColor == targetColor then
+            return false
+        end
+    end
+    
+    return true -- Враг
+end
+
+-- Получить врагов (без тиммейтов)
+local function GetEnemies()
+    local list = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if IsEnemy(v) then -- ТОЛЬКО ВРАГИ!
+                table.insert(list, v)
+            end
+        end
+    end
+    return list
+end
+
+-- Получить всех игроков (для ESP)
+local function GetAllPlayers()
+    local list = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(list, v)
+        end
+    end
+    return list
+end
+
+-- ===== СОЗДАНИЕ GUI ДЛЯ ТЕЛЕФОНА =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BloxStrikeHub"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
+
+-- Панель кнопок
+local buttonPanel = Instance.new("Frame")
+buttonPanel.Size = UDim2.new(0, 170, 0, 310)
+buttonPanel.Position = UDim2.new(0, 10, 0.4, 0)
+buttonPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+buttonPanel.BackgroundTransparency = 0.6
+buttonPanel.BorderSizePixel = 0
+buttonPanel.Parent = screenGui
+
+local panelCorner = Instance.new("UICorner")
+panelCorner.CornerRadius = UDim.new(0, 10)
+panelCorner.Parent = buttonPanel
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "🎯 BLOXSTRIKE"
+title.TextColor3 = Color3.fromRGB(255, 200, 50)
+title.TextSize = 16
+title.Font = Enum.Font.GothamBold
+title.Parent = buttonPanel
+
+-- Статус TeamCheck
+local teamStatus = Instance.new("TextLabel")
+teamStatus.Size = UDim2.new(1, 0, 0, 20)
+teamStatus.Position = UDim2.new(0, 0, 0, 30)
+teamStatus.BackgroundTransparency = 1
+teamStatus.Text = "🛡️ Team Check: ON"
+teamStatus.TextColor3 = Color3.fromRGB(0, 255, 100)
+teamStatus.TextSize = 12
+teamStatus.Font = Enum.Font.Gotham
+teamStatus.Parent = buttonPanel
+
+-- Функция создания кнопки
+local function CreateToggle(text, y, settingKey, defaultValue)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 70)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextSize = 13
+    btn.Font = Enum.Font.Gotham
+    btn.BorderSizePixel = 0
+    btn.Parent = buttonPanel
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.Parent = btn
+
+    local status = Instance.new("TextLabel")
+    status.Size = UDim2.new(0, 25, 1, 0)
+    status.Position = UDim2.new(1, -30, 0, 0)
+    status.BackgroundTransparency = 1
+    status.Text = "⬜"
+    status.TextColor3 = Color3.fromRGB(255, 50, 50)
+    status.TextSize = 14
+    status.Parent = btn
+
+    Settings[settingKey] = defaultValue ~= nil and defaultValue or false
+    
+    if Settings[settingKey] then
+        status.Text = "✅"
+        status.TextColor3 = Color3.fromRGB(50, 255, 50)
+    else
+        status.Text = "❌"
+        status.TextColor3 = Color3.fromRGB(255, 50, 50)
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        Settings[settingKey] = not Settings[settingKey]
+        if Settings[settingKey] then
+            status.Text = "✅"
+            status.TextColor3 = Color3.fromRGB(50, 255, 50)
+        else
+            status.Text = "❌"
+            status.TextColor3 = Color3.fromRGB(255, 50, 50)
+        end
+        
+        -- Обновляем статус TeamCheck
+        if settingKey == "TeamCheck" then
+            if Settings.TeamCheck then
+                teamStatus.Text = "🛡️ Team Check: ON"
+                teamStatus.TextColor3 = Color3.fromRGB(0, 255, 100)
+            else
+                teamStatus.Text = "⚠️ Team Check: OFF (бьёт всех)"
+                teamStatus.TextColor3 = Color3.fromRGB(255, 200, 0)
+            end
+        end
+        print(settingKey .. ": " .. tostring(Settings[settingKey]))
+    end)
+
+    return btn
+end
+
+-- Кнопки
+CreateToggle("🎯 Aimbot", 55, "Aimbot", true)
+CreateToggle("🦘 Inf Jump", 90, "InfiniteJump", true)
+CreateToggle("👁️ ESP", 125, "ESP", true)
+CreateToggle("🔫 No Recoil", 160, "NoRecoil", true)
+CreateToggle("⚡ Speed", 195, "SpeedHack", false)
+CreateToggle("💥 No Flash", 230, "NoFlash", true)
+CreateToggle("🛡️ Team Check", 265, "TeamCheck", true)
+
+-- =====================================
+-- ====== AIMBOT (НЕ РАБОТАЕТ НА СВОИХ) ======
+-- =====================================
+
+if Settings.Aimbot then
+    local function GetClosest()
+        local closest = nil
+        local shortest = math.huge
+        local center = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+        
+        -- Ищем ТОЛЬКО ВРАГОВ
+        for _, v in pairs(GetEnemies()) do
+            if v.Character then
+                local targetPart = v.Character:FindFirstChild("Head")
+                if not targetPart then
+                    targetPart = v.Character:FindFirstChild("HumanoidRootPart")
+                end
+                
+                if targetPart then
+                    local pos, onScreen = camera:WorldToScreenPoint(targetPart.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(pos.X, pos.Y) - center).magnitude
+                        if dist < 500 and dist < shortest then
+                            shortest = dist
+                            closest = v
+                        end
+                    end
+                end
+            end
+        end
+        return closest
+    end
+    
+    -- Для телефона: постоянный аим на врагов
+    runService.RenderStepped:Connect(function()
+        if Settings.Aimbot then
+            local target = GetClosest()
+            if target and target.Character then
+                -- Проверка, что это враг
+                if IsEnemy(target) then
+                    local targetPart = target.Character:FindFirstChild("Head")
+                    if not targetPart then
+                        targetPart = target.Character:FindFirstChild("HumanoidRootPart")
+                    end
+                    
+                    if targetPart then
+                        local targetPos = targetPart.Position
+                        local newCFrame = CFrame.new(camera.CFrame.Position, targetPos)
+                        camera.CFrame = camera.CFrame:Lerp(newCFrame, 0.2)
+                    end
+                end
+            end
+        end
+    end)
+    
+    -- Для ПК: ПКМ только на врагов
+    userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if Settings.Aimbot and input.UserInputType == Enum.UserInputType.MouseButton2 then
+            local target = GetClosest()
+            if target and target.Character and IsEnemy(target) then
+                local targetPart = target.Character:FindFirstChild("Head")
+                if not targetPart then
+                    targetPart = target.Character:FindFirstChild("HumanoidRootPart")
+                end
+                if targetPart then
+                    camera.CFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
+                end
+            end
+        end
+    end)
+end
+
+-- =====================================
+-- ====== ESP (РАЗНЫЙ ЦВЕТ ДЛЯ СВОИХ) ======
+-- =====================================
+
+if Settings.ESP then
+    runService.RenderStepped:Connect(function()
+        for _, v in pairs(GetAllPlayers()) do
+            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                if not v.Character:FindFirstChild("ESPBox") then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Name = "ESPBox"
+                    box.Size = Vector3.new(4, 6, 1)
+                    box.Adornee = v.Character.HumanoidRootPart
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 0
+                    box.Transparency = 0.3
+                    
+                    -- РАЗНЫЙ ЦВЕТ: враги - красные, свои - зелёные
+                    if IsEnemy(v) then
+                        box.Color3 = Color3.new(1, 0, 0) -- Враг (красный)
+                    else
+                        box.Color3 = Color3.new(0, 1, 0) -- Свой (зелёный)
+                    end
+                    box.Parent = v.Character.HumanoidRootPart
+                    
+                    -- Имя с указанием команды
+                    local nameTag = Instance.new("BillboardGui")
+                    nameTag.Name = "ESPName"
+                    nameTag.Size = UDim2.new(0, 200, 0, 25)
+                    nameTag.Adornee = v.Character.Head or v.Character.HumanoidRootPart
+                    nameTag.Parent = v.Character.Head or v.Character.HumanoidRootPart
+                    
+                    local text = Instance.new("TextLabel")
+                    text.Size = UDim2.new(1, 0, 1, 0)
+                    text.BackgroundTransparency = 1
+                    
+                    -- Добавляем метку "TEAM" для своих
+                    if IsEnemy(v) then
+                        text.Text = v.Name .. " 🔴"
+                        text.TextColor3 = Color3.new(1, 0, 0)
+                    else
+                        text.Text = v.Name .. " 🟢 TEAM"
+                        text.TextColor3 = Color3.new(0, 1, 0)
+                    end
+                    text.TextScaled = true
+                    text.Font = Enum.Font.GothamBold
+                    text.Parent = nameTag
+                end
+            end
+        end
+    end)
+end
+
+-- =====================================
+-- ====== ОСТАЛЬНЫЕ ФУНКЦИИ ======
+-- =====================================
+
+-- INFINITE JUMP
+if Settings.InfiniteJump then
+    runService:BindToRenderStep("InfiniteJump", 1, function()
+        if Settings.InfiniteJump then
+            local char = player.Character
+            if char then
+                local humanoid = char:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.UseJumpPower = true
+                    humanoid.JumpPower = 100
+                end
+            end
+        end
+    end)
+end
+
+-- NO RECOIL
+if Settings.NoRecoil then
+    runService.RenderStepped:Connect(function()
+        local char = player.Character
+        if char then
+            for _, tool in pairs(char:GetChildren()) do
+                if tool:IsA("Tool") then
+                    local recoil = tool:FindFirstChild("Recoil")
+                    if recoil then
+                        recoil.Value = 0
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- SPEED HACK
+if Settings.SpeedHack then
+    runService.RenderStepped:Connect(function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = Settings.SpeedValue
+        end
+    end)
+end
+
+-- NO FLASH
+if Settings.NoFlash then
+    game:GetService("Lighting").Brightness = 1
+    game:GetService("Lighting").Ambient = Color3.fromRGB(255, 255, 255)
+end
+
+-- Открытие меню (INSERT для ПК)
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Insert then
+        buttonPanel.Visible = not buttonPanel.Visible
+    end
+end)
+
+-- Двойной тап для телефона
+local lastTap = 0
+userInputService.TouchTap:Connect(function()
+    if userInputService.TouchEnabled then
+        local currentTime = tick()
+        if currentTime - lastTap < 0.5 then
+            buttonPanel.Visible = not buttonPanel.Visible
+        end
+        lastTap = currentTime
+    end
+end)
+
+print("✅ BLOXSTRIKE SCRIPT ЗАГРУЖЕН!")
+print("🛡️ Team Check: НЕ РАБОТАЕТ НА СВОИХ!")
+print("🔴 Враги - красные")
+print("🟢 Свои - зелёные")
+print("📱 Нажми INSERT или двойной тап для меню")
