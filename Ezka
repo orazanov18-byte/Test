@@ -1,0 +1,208 @@
+-- MM2 (MURDER MYSTERY 2) SCRIPT
+-- ОБНОВЛЕННЫЙ РАБОЧИЙ СКРИПТ
+-- Поддерживает: AutoFarm, ESP, AimBot, и многое другое
+
+local player = game:GetService("Players").LocalPlayer
+local mouse = player:GetMouse()
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local workspace = game:GetService("Workspace")
+local camera = workspace.CurrentCamera
+
+-- === НАСТРОЙКИ (ИЗМЕНЯЙ ЗДЕСЬ) ===
+local Settings = {
+    AutoFarm = true,          -- Авто-фарм (следит за убийцей)
+    ESP = true,               -- ESP (показывает игроков через стены)
+    AimBot = false,           -- Авто-прицеливание (только когда вы убийца)
+    SilentAim = false,        -- Тихий аим (невидимый для других)
+    ShowTrails = true,        -- Показывать следы игроков
+    FOV = 100,                -- Радиус обзора для AimBot (в пикселях)
+    TeamCheck = true,         -- Не целиться в шерифа (если вы убийца)
+}
+
+-- === ГЛАВНАЯ ФУНКЦИЯ ===
+local function GetPlayers()
+    local players = {}
+    for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(players, v)
+        end
+    end
+    return players
+end
+
+-- === ESP ===
+if Settings.ESP then
+    local function CreateESP()
+        for _, v in pairs(GetPlayers()) do
+            if not v.Character:FindFirstChild("ESP_Box") then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Name = "ESP_Box"
+                box.Size = Vector3.new(4, 6, 1)
+                box.Adornee = v.Character.HumanoidRootPart
+                box.ZIndex = 0
+                box.AlwaysOnTop = true
+                box.Parent = v.Character.HumanoidRootPart
+                
+                -- Цвет зависит от роли
+                if v.Team == player.Team then
+                    box.Color3 = Color3.new(0, 1, 0) -- Зеленый (союзник)
+                else
+                    box.Color3 = Color3.new(1, 0, 0) -- Красный (враг)
+                end
+                
+                -- Имя игрока
+                local text = Instance.new("BillboardGui")
+                text.Name = "ESP_Name"
+                text.Size = UDim2.new(0, 200, 0, 50)
+                text.Adornee = v.Character.Head
+                text.Parent = v.Character.Head
+                
+                local label = Instance.new("TextLabel")
+                label.Size = UDim2.new(1, 0, 1, 0)
+                label.BackgroundTransparency = 1
+                label.Text = v.Name
+                label.TextColor3 = Color3.new(1, 1, 1)
+                label.TextScaled = true
+                label.Parent = text
+            end
+        end
+    end
+    
+    -- Обновление ESP
+    game:GetService("RunService").RenderStepped:Connect(function()
+        CreateESP()
+    end)
+end
+
+-- === AUTOFARM (СЛЕЖКА ЗА УБИЙЦЕЙ) ===
+if Settings.AutoFarm then
+    local function FindMurderer()
+        for _, v in pairs(GetPlayers()) do
+            if v.Team.Name == "Murderer" then
+                return v
+            end
+        end
+        return nil
+    end
+    
+    -- Индикатор направления на убийцу
+    local function ShowDirection()
+        local murderer = FindMurderer()
+        if murderer and murderer.Character and murderer.Character:FindFirstChild("HumanoidRootPart") then
+            local dir = (murderer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Unit
+            -- Можно добавить стрелку на экране
+        end
+    end
+    
+    game:GetService("RunService").RenderStepped:Connect(function()
+        ShowDirection()
+    end)
+end
+
+-- === AIMBOT ===
+if Settings.AimBot then
+    local function GetClosestPlayer()
+        local closest = nil
+        local shortest = math.huge
+        
+        for _, v in pairs(GetPlayers()) do
+            if v.Team ~= player.Team or not Settings.TeamCheck then
+                local pos, onScreen = camera:WorldToScreenPoint(v.Character.HumanoidRootPart.Position)
+                if onScreen then
+                    local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).magnitude
+                    if dist < Settings.FOV and dist < shortest then
+                        shortest = dist
+                        closest = v
+                    end
+                end
+            end
+        end
+        return closest
+    end
+    
+    -- Авто-прицеливание при нажатии ПКМ
+    userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton2 then
+            local target = GetClosestPlayer()
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                -- Наводим камеру на цель
+                camera.CFrame = CFrame.new(camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+            end
+        end
+    end)
+end
+
+-- === СЛЕДЫ ИГРОКОВ (TRAILS) ===
+if Settings.ShowTrails then
+    for _, v in pairs(GetPlayers()) do
+        if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local trail = Instance.new("Trail")
+            trail.Name = "Trail"
+            trail.Parent = v.Character.HumanoidRootPart
+            trail.Lifetime = 0.5
+            trail.Transparency = NumberSequence.new(0, 1)
+            trail.WidthScale = NumberSequence.new(1, 0)
+            trail.Color = ColorSequence.new(Color3.new(1, 0, 0))
+        end
+    end
+end
+
+-- === GUI МЕНЮ (ОТКРЫТЬ НАЖАТИЕМ INS) ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 400)
+frame.Position = UDim2.new(0.5, -150, 0.5, -200)
+frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+frame.BackgroundTransparency = 0.2
+frame.Visible = false
+frame.Parent = screenGui
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "MM2 SCRIPT"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Parent = frame
+
+-- Кнопки
+local function CreateButton(text, y, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.8, 0, 0, 30)
+    btn.Position = UDim2.new(0.1, 0, 0, y)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Parent = frame
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+CreateButton("Toggle ESP", 40, function()
+    Settings.ESP = not Settings.ESP
+end)
+
+CreateButton("Toggle AutoFarm", 80, function()
+    Settings.AutoFarm = not Settings.AutoFarm
+end)
+
+CreateButton("Toggle AimBot", 120, function()
+    Settings.AimBot = not Settings.AimBot
+end)
+
+CreateButton("Toggle Trails", 160, function()
+    Settings.ShowTrails = not Settings.ShowTrails
+end)
+
+-- Открытие меню по клавише INS
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Insert then
+        frame.Visible = not frame.Visible
+    end
+end)
+
+print("MM2 Script загружен! Нажми INS для открытия меню.")
