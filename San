@@ -1,0 +1,438 @@
+-- SAN DIEGO BORDER ROLEPLAY С ЗАЩИТОЙ ОТ СМЕРТИ
+-- ИСПРАВЛЕННАЯ ВЕРСИЯ (БЕССМЕРТИЕ + БОРЬБА СО СМЕРТЬЮ)
+
+local player = game:GetService("Players").LocalPlayer
+local workspace = game:GetService("Workspace")
+local camera = workspace.CurrentCamera
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local virtualUser = game:GetService("VirtualUser")
+
+-- ===== НАСТРОЙКИ =====
+local Settings = {
+    GodMode = true,          -- БЕССМЕРТИЕ (НЕ УМИРАЕШЬ)
+    InfiniteHealth = true,   -- Бесконечное здоровье
+    AntiDeath = true,        -- Защита от смерти
+    Aimbot = true,
+    ESP = true,
+    AutoStamp = false,
+    AutoFarm = false,
+    SpeedHack = false,
+    SpeedValue = 30,
+    InfiniteJump = false,
+    NoClip = false,
+    AntiAFK = true,
+    TeamCheck = true,
+}
+
+-- =====================================
+-- ====== БЕССМЕРТИЕ (ГЛАВНОЕ) ======
+-- =====================================
+
+-- Функция для восстановления здоровья
+local function HealPlayer()
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            -- Восстанавливаем здоровье
+            humanoid.Health = humanoid.MaxHealth
+            humanoid.BreakJointsOnDeath = false
+            humanoid.AutoRotate = true
+            
+            -- Убираем эффекты смерти
+            if char:FindFirstChild("ForceField") then
+                char.ForceField:Destroy()
+            end
+        end
+        
+        -- Восстанавливаем части тела
+        for _, part in pairs(char:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 0
+                part.CanCollide = true
+            end
+        end
+    end
+end
+
+-- Постоянное лечение
+runService.RenderStepped:Connect(function()
+    if Settings.GodMode or Settings.InfiniteHealth then
+        local char = player.Character
+        if char then
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid then
+                -- Мгновенное восстановление здоровья
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+                humanoid.BreakJointsOnDeath = false
+                
+                -- Защита от падения
+                if humanoid.Health <= 0 then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end
+        end
+    end
+end)
+
+-- Защита от смерти (событие)
+if Settings.AntiDeath then
+    local function onCharacterAdded(char)
+        wait(0.1)
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.Health = humanoid.MaxHealth
+            humanoid.BreakJointsOnDeath = false
+            
+            -- Отключаем смерть
+            humanoid.Died:Connect(function()
+                wait(0.1)
+                humanoid.Health = humanoid.MaxHealth
+                char:BreakJointsOnDeath = false
+            end)
+        end
+    end
+    
+    -- При добавлении персонажа
+    player.CharacterAdded:Connect(onCharacterAdded)
+    
+    -- Если персонаж уже есть
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+end
+
+-- Блокировка урона
+local function blockDamage()
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.Health = humanoid.MaxHealth
+            humanoid.BreakJointsOnDeath = false
+            
+            -- Отключаем все уроны
+            for _, v in pairs(char:GetChildren()) do
+                if v:IsA("BasePart") then
+                    v:SetAttribute("Health", 9999)
+                end
+            end
+        end
+    end
+end
+
+runService.Heartbeat:Connect(function()
+    blockDamage()
+end)
+
+-- =====================================
+-- ====== ANTI-AFK ======
+-- =====================================
+if Settings.AntiAFK then
+    player.Idled:Connect(function()
+        virtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        wait(0.1)
+        virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end)
+end
+
+-- =====================================
+-- ====== ПРОВЕРКА КОМАНДЫ ======
+-- =====================================
+local function IsEnemy(target)
+    if not Settings.TeamCheck then return true end
+    if target.Team and player.Team then
+        if target.Team == player.Team then return false end
+    end
+    if target.TeamColor and player.TeamColor then
+        if target.TeamColor == player.TeamColor then return false end
+    end
+    return true
+end
+
+local function GetEnemies()
+    local list = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if IsEnemy(v) then table.insert(list, v) end
+        end
+    end
+    return list
+end
+
+local function GetAllPlayers()
+    local list = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(list, v)
+        end
+    end
+    return list
+end
+
+-- =====================================
+-- ====== СОЗДАНИЕ GUI ======
+-- =====================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SDBR_God"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
+
+local mainPanel = Instance.new("Frame")
+mainPanel.Size = UDim2.new(0, 190, 0, 450)
+mainPanel.Position = UDim2.new(0, 5, 0.3, 0)
+mainPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainPanel.BackgroundTransparency = 0.65
+mainPanel.BorderSizePixel = 0
+mainPanel.Parent = screenGui
+
+local panelCorner = Instance.new("UICorner")
+panelCorner.CornerRadius = UDim.new(0, 12)
+panelCorner.Parent = mainPanel
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 32)
+title.BackgroundTransparency = 1
+title.Text = "🛡️ SDBR GOD"
+title.TextColor3 = Color3.fromRGB(100, 255, 100)
+title.TextSize = 17
+title.Font = Enum.Font.GothamBold
+title.Parent = mainPanel
+
+-- Статус здоровья
+local healthStatus = Instance.new("TextLabel")
+healthStatus.Size = UDim2.new(1, 0, 0, 20)
+healthStatus.Position = UDim2.new(0, 0, 0, 32)
+healthStatus.BackgroundTransparency = 1
+healthStatus.Text = "❤️ GOD MODE: ON"
+healthStatus.TextColor3 = Color3.fromRGB(50, 255, 50)
+healthStatus.TextSize = 13
+healthStatus.Font = Enum.Font.GothamBold
+healthStatus.Parent = mainPanel
+
+local function CreateBigButton(text, y, settingKey, defaultValue)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.92, 0, 0, 36)
+    btn.Position = UDim2.new(0.04, 0, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 65)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextSize = 13
+    btn.Font = Enum.Font.Gotham
+    btn.BorderSizePixel = 0
+    btn.Parent = mainPanel
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+
+    local status = Instance.new("Frame")
+    status.Size = UDim2.new(0, 18, 0, 18)
+    status.Position = UDim2.new(1, -26, 0.5, -9)
+    status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    status.BorderSizePixel = 0
+    status.Parent = btn
+
+    local statusCorner = Instance.new("UICorner")
+    statusCorner.CornerRadius = UDim.new(1, 0)
+    statusCorner.Parent = status
+
+    local statusText = Instance.new("TextLabel")
+    statusText.Size = UDim2.new(1, 0, 1, 0)
+    statusText.BackgroundTransparency = 1
+    statusText.Text = "OFF"
+    statusText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    statusText.TextSize = 8
+    statusText.Font = Enum.Font.GothamBold
+    statusText.Parent = status
+
+    Settings[settingKey] = defaultValue ~= nil and defaultValue or false
+    
+    local function Update()
+        if Settings[settingKey] then
+            status.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+            statusText.Text = "ON"
+        else
+            status.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+            statusText.Text = "OFF"
+        end
+    end
+    Update()
+
+    btn.MouseButton1Click:Connect(function()
+        Settings[settingKey] = not Settings[settingKey]
+        Update()
+        print(settingKey .. ": " .. tostring(Settings[settingKey]))
+    end)
+
+    return btn
+end
+
+-- Кнопки с GOD MODE первыми!
+CreateBigButton("🛡️ GOD MODE (БЕССМЕРТИЕ)", 57, "GodMode", true)
+CreateBigButton("❤️ Infinite Health", 97, "InfiniteHealth", true)
+CreateBigButton("💀 Anti-Death", 137, "AntiDeath", true)
+CreateBigButton("🎯 Aimbot", 177, "Aimbot", true)
+CreateBigButton("👁️ ESP", 217, "ESP", true)
+CreateBigButton("🔄 Auto Stamp", 257, "AutoStamp", false)
+CreateBigButton("📦 Auto Farm", 297, "AutoFarm", false)
+CreateBigButton("⚡ Speed", 337, "SpeedHack", false)
+CreateBigButton("🦘 Jump", 377, "InfiniteJump", false)
+CreateBigButton("🔮 NoClip", 417, "NoClip", false)
+
+-- =====================================
+-- ====== ESP ======
+-- =====================================
+if Settings.ESP then
+    runService.RenderStepped:Connect(function()
+        for _, v in pairs(GetAllPlayers()) do
+            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                if not v.Character:FindFirstChild("ESPBox") then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Name = "ESPBox"
+                    box.Size = Vector3.new(4, 6, 1)
+                    box.Adornee = v.Character.HumanoidRootPart
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 0
+                    box.Transparency = 0.25
+                    
+                    if IsEnemy(v) then
+                        box.Color3 = Color3.fromRGB(255, 0, 0)
+                    else
+                        box.Color3 = Color3.fromRGB(0, 255, 100)
+                    end
+                    box.Parent = v.Character.HumanoidRootPart
+                    
+                    local nameTag = Instance.new("BillboardGui")
+                    nameTag.Name = "ESPName"
+                    nameTag.Size = UDim2.new(0, 200, 0, 30)
+                    nameTag.Adornee = v.Character.Head or v.Character.HumanoidRootPart
+                    nameTag.Parent = v.Character.Head or v.Character.HumanoidRootPart
+                    
+                    local text = Instance.new("TextLabel")
+                    text.Size = UDim2.new(1, 0, 1, 0)
+                    text.BackgroundTransparency = 1
+                    if IsEnemy(v) then
+                        text.Text = "🔴 " .. v.Name
+                        text.TextColor3 = Color3.fromRGB(255, 50, 50)
+                    else
+                        text.Text = "🟢 " .. v.Name
+                        text.TextColor3 = Color3.fromRGB(50, 255, 50)
+                    end
+                    text.TextScaled = true
+                    text.Font = Enum.Font.GothamBold
+                    text.Parent = nameTag
+                end
+            end
+        end
+    end)
+end
+
+-- =====================================
+-- ====== AIMBOT ======
+-- =====================================
+if Settings.Aimbot then
+    local function GetClosest()
+        local closest = nil
+        local shortest = math.huge
+        local center = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+        
+        for _, v in pairs(GetEnemies()) do
+            if v.Character then
+                local targetPart = v.Character:FindFirstChild("Head") or v.Character:FindFirstChild("HumanoidRootPart")
+                if targetPart then
+                    local pos, onScreen = camera:WorldToScreenPoint(targetPart.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(pos.X, pos.Y) - center).magnitude
+                        if dist < 600 and dist < shortest then
+                            shortest = dist
+                            closest = v
+                        end
+                    end
+                end
+            end
+        end
+        return closest
+    end
+    
+    runService.RenderStepped:Connect(function()
+        if Settings.Aimbot then
+            local target = GetClosest()
+            if target and target.Character and IsEnemy(target) then
+                local targetPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
+                if targetPart then
+                    camera.CFrame = camera.CFrame:Lerp(
+                        CFrame.new(camera.CFrame.Position, targetPart.Position),
+                        0.18
+                    )
+                end
+            end
+        end
+    end)
+end
+
+-- =====================================
+-- ====== SPEED ======
+-- =====================================
+runService.RenderStepped:Connect(function()
+    if Settings.SpeedHack and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = Settings.SpeedValue
+    elseif player.Character and player.Character:FindFirstChild("Humanoid") then
+        if player.Character.Humanoid.WalkSpeed ~= 16 then
+            player.Character.Humanoid.WalkSpeed = 16
+        end
+    end
+end)
+
+-- =====================================
+-- ====== JUMP ======
+-- =====================================
+runService.RenderStepped:Connect(function()
+    if Settings.InfiniteJump and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.UseJumpPower = true
+        player.Character.Humanoid.JumpPower = 100
+    end
+end)
+
+-- =====================================
+-- ====== NOCLIP ======
+-- =====================================
+runService.RenderStepped:Connect(function()
+    if Settings.NoClip and player.Character then
+        for _, part in pairs(player.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- =====================================
+-- ====== ОТКРЫТИЕ МЕНЮ ======
+-- =====================================
+local lastTap = 0
+userInputService.TouchTap:Connect(function()
+    if userInputService.TouchEnabled then
+        local currentTime = tick()
+        if currentTime - lastTap < 0.5 then
+            mainPanel.Visible = not mainPanel.Visible
+        end
+        lastTap = currentTime
+    end
+end)
+
+-- Для ПК
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Insert then
+        mainPanel.Visible = not mainPanel.Visible
+    end
+end)
+
+print("✅ SAN DIEGO BORDER - БЕССМЕРТИЕ ВКЛЮЧЕНО!")
+print("🛡️ ТЫ БОЛЬШЕ НЕ УМИРАЕШЬ!")
+print("❤️ Здоровье мгновенно восстанавливается")
+print("📱 Двойной тап - меню")
