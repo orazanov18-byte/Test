@@ -1,0 +1,397 @@
+-- BloxStrike Delta Executor Script
+-- Поддерживает: Aimbot, ESP, No Recoil, Skin Changer, GUI
+-- Работает на ПК и телефоне (Delta Executor)
+
+local player = game:GetService("Players").LocalPlayer
+local mouse = player:GetMouse()
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local workspace = game:GetService("Workspace")
+local camera = workspace.CurrentCamera
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ===== НАСТРОЙКИ =====
+local Settings = {
+    Aimbot = true,
+    AimbotKey = Enum.KeyCode.RightAlt,  -- Кнопка для аима
+    TargetPart = "Head", -- "Head" или "HumanoidRootPart"
+    FOV = 200,
+    Smoothness = 0.15,
+    ESP = true,
+    TeamCheck = true,
+    NoRecoil = true,
+    NoFlash = true,
+    NoSmoke = true,
+    SpeedHack = false,
+    SpeedValue = 25,
+    InfiniteJump = false,
+    SkinChanger = false,
+    SelectedSkin = "Default",
+}
+
+-- ===== СОЗДАНИЕ GUI (ДЛЯ ТЕЛЕФОНА И ПК) =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BloxStrikeHub"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player.PlayerGui
+
+-- Главное меню
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 320, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -210)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+mainFrame.BackgroundTransparency = 0.1
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 12)
+mainCorner.Parent = mainFrame
+
+-- Заголовок
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 45)
+header.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+header.BorderSizePixel = 0
+header.Parent = mainFrame
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 12)
+headerCorner.Parent = header
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "🎯 BloxStrike Hub"
+title.TextColor3 = Color3.fromRGB(0, 200, 255)
+title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.Parent = header
+
+-- Кнопка закрытия
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -40, 0, 8)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+closeBtn.BackgroundTransparency = 0.3
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 16
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = header
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeBtn
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+end)
+
+-- Скролл
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, 0, 1, -50)
+scroll.Position = UDim2.new(0, 0, 0, 50)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.ScrollBarThickness = 3
+scroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 150)
+scroll.Parent = mainFrame
+
+local uiList = Instance.new("UIListLayout")
+uiList.Padding = UDim.new(0, 6)
+uiList.FillDirection = Enum.FillDirection.Vertical
+uiList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+uiList.Parent = scroll
+
+-- Функция создания переключателя
+local function CreateToggle(text, settingKey)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0.92, 0, 0, 38)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+    frame.BackgroundTransparency = 0.5
+    frame.BorderSizePixel = 0
+    frame.Parent = scroll
+
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 6)
+    frameCorner.Parent = frame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Position = UDim2.new(0.05, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(220, 220, 255)
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local switchBg = Instance.new("Frame")
+    switchBg.Size = UDim2.new(0, 44, 0, 22)
+    switchBg.Position = UDim2.new(1, -52, 0.5, -11)
+    switchBg.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    switchBg.BorderSizePixel = 0
+    switchBg.Parent = frame
+
+    local switchCorner = Instance.new("UICorner")
+    switchCorner.CornerRadius = UDim.new(0, 11)
+    switchCorner.Parent = switchBg
+
+    local switchCircle = Instance.new("Frame")
+    switchCircle.Size = UDim2.new(0, 16, 0, 16)
+    switchCircle.Position = UDim2.new(0, 3, 0.5, -8)
+    switchCircle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    switchCircle.BorderSizePixel = 0
+    switchCircle.Parent = switchBg
+
+    local circleCorner = Instance.new("UICorner")
+    circleCorner.CornerRadius = UDim.new(0, 8)
+    circleCorner.Parent = switchCircle
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = switchBg
+
+    local function Update(state)
+        Settings[settingKey] = state
+        if state then
+            switchBg.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+            switchCircle.Position = UDim2.new(0, 25, 0.5, -8)
+            switchCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            switchBg.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+            switchCircle.Position = UDim2.new(0, 3, 0.5, -8)
+            switchCircle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    end
+
+    Update(Settings[settingKey])
+
+    btn.MouseButton1Click:Connect(function()
+        Update(not Settings[settingKey])
+    end)
+
+    return frame
+end
+
+-- Кнопки меню
+CreateToggle("🎯 Aimbot", "Aimbot")
+CreateToggle("👁️ ESP", "ESP")
+CreateToggle("🔫 No Recoil", "NoRecoil")
+CreateToggle("💥 No Flash", "NoFlash")
+CreateToggle("🌫️ No Smoke", "NoSmoke")
+CreateToggle("⚡ Speed Hack", "SpeedHack")
+CreateToggle("🦘 Infinite Jump", "InfiniteJump")
+CreateToggle("🎨 Skin Changer", "SkinChanger")
+
+-- ===== ФУНКЦИИ =====
+local function GetPlayers()
+    local list = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(list, v)
+        end
+    end
+    return list
+end
+
+local function IsAlive()
+    return player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0
+end
+
+-- ===== AIMBOT =====
+if Settings.Aimbot then
+    local function GetClosest()
+        local closest = nil
+        local shortest = math.huge
+        
+        for _, v in pairs(GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild(Settings.TargetPart) then
+                local pos, onScreen = camera:WorldToScreenPoint(v.Character[Settings.TargetPart].Position)
+                if onScreen then
+                    local center = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+                    local dist = (Vector2.new(pos.X, pos.Y) - center).magnitude
+                    if dist < Settings.FOV and dist < shortest then
+                        if Settings.TeamCheck then
+                            if v.Team ~= player.Team then
+                                shortest = dist
+                                closest = v
+                            end
+                        else
+                            shortest = dist
+                            closest = v
+                        end
+                    end
+                end
+            end
+        end
+        return closest
+    end
+    
+    -- Аимбот при зажатии кнопки
+    userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Settings.AimbotKey then
+            local target = GetClosest()
+            if target and target.Character and target.Character:FindFirstChild(Settings.TargetPart) then
+                camera.CFrame = CFrame.new(camera.CFrame.Position, target.Character[Settings.TargetPart].Position)
+            end
+        end
+    end)
+    
+    -- Постоянный аим (для телефона)
+    runService.RenderStepped:Connect(function()
+        if Settings.Aimbot and userInputService.TouchEnabled then
+            local target = GetClosest()
+            if target and target.Character and target.Character:FindFirstChild(Settings.TargetPart) then
+                local targetPos = target.Character[Settings.TargetPart].Position
+                local newCFrame = CFrame.new(camera.CFrame.Position, targetPos)
+                camera.CFrame = camera.CFrame:Lerp(newCFrame, Settings.Smoothness)
+            end
+        end
+    end)
+end
+
+-- ===== ESP =====
+if Settings.ESP then
+    runService.RenderStepped:Connect(function()
+        for _, v in pairs(GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                if not v.Character:FindFirstChild("ESPBox") then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Name = "ESPBox"
+                    box.Size = Vector3.new(3.5, 5, 1)
+                    box.Adornee = v.Character.HumanoidRootPart
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 0
+                    box.Transparency = 0.2
+                    
+                    if v.Team == player.Team then
+                        box.Color3 = Color3.fromRGB(0, 255, 100)
+                    else
+                        box.Color3 = Color3.fromRGB(255, 50, 50)
+                    end
+                    box.Parent = v.Character.HumanoidRootPart
+                    
+                    -- Имя
+                    local nameTag = Instance.new("BillboardGui")
+                    nameTag.Name = "ESPName"
+                    nameTag.Size = UDim2.new(0, 200, 0, 30)
+                    nameTag.Adornee = v.Character.Head
+                    nameTag.Parent = v.Character.Head
+                    
+                    local text = Instance.new("TextLabel")
+                    text.Size = UDim2.new(1, 0, 1, 0)
+                    text.BackgroundTransparency = 1
+                    text.Text = v.Name
+                    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    text.TextScaled = true
+                    text.Font = Enum.Font.GothamBold
+                    text.Parent = nameTag
+                end
+            end
+        end
+    end)
+end
+
+-- ===== NO RECOIL =====
+if Settings.NoRecoil then
+    runService.RenderStepped:Connect(function()
+        local char = player.Character
+        if char then
+            for _, tool in pairs(char:GetChildren()) do
+                if tool:IsA("Tool") and tool:FindFirstChild("Recoil") then
+                    tool.Recoil.Value = 0
+                end
+            end
+        end
+    end)
+end
+
+-- ===== NO FLASH =====
+if Settings.NoFlash then
+    runService.RenderStepped:Connect(function()
+        local flash = workspace:FindFirstChild("Flashbang")
+        if flash then flash:Destroy() end
+    end)
+end
+
+-- ===== NO SMOKE =====
+if Settings.NoSmoke then
+    runService.RenderStepped:Connect(function()
+        for _, v in pairs(workspace:GetChildren()) do
+            if v.Name:find("Smoke") or v.Name:find("SmokeGrenade") then
+                v:Destroy()
+            end
+        end
+    end)
+end
+
+-- ===== SPEED HACK =====
+if Settings.SpeedHack then
+    runService.RenderStepped:Connect(function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = Settings.SpeedValue
+        end
+    end)
+end
+
+-- ===== INFINITE JUMP =====
+if Settings.InfiniteJump then
+    runService.RenderStepped:Connect(function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.UseJumpPower = true
+        end
+    end)
+end
+
+-- ===== SKIN CHANGER =====
+if Settings.SkinChanger then
+    -- Простой скин-чейнджер (меняет цвет оружия)
+    runService.RenderStepped:Connect(function()
+        local char = player.Character
+        if char then
+            for _, tool in pairs(char:GetChildren()) do
+                if tool:IsA("Tool") then
+                    for _, part in pairs(tool:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.Color3 = Color3.fromRGB(255, 200, 0)
+                            part.Material = Enum.Material.Neon
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ===== ОТКРЫТИЕ МЕНЮ =====
+userInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Insert then
+        mainFrame.Visible = not mainFrame.Visible
+    end
+end)
+
+-- Для телефона: двойной тап по экрану
+local lastTap = 0
+userInputService.TouchTap:Connect(function()
+    if userInputService.TouchEnabled then
+        local currentTime = tick()
+        if currentTime - lastTap < 0.5 then
+            mainFrame.Visible = not mainFrame.Visible
+        end
+        lastTap = currentTime
+    end
+end)
+
+print("✅ BloxStrike Hub загружен!")
+print("📱 Нажми INSERT для открытия меню")
+print("📱 На телефоне: двойной тап по экрану")
+print("🎯 Зажми RightAlt для AimBot")
