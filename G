@@ -1,0 +1,376 @@
+-- ШКОЛА 102 РП ДЛЯ ТЕЛЕФОНА [ПОЛНАЯ ВЕРСИЯ]
+-- РАБОТАЕТ: Delta, Arceus X, Hydrogen, Vega X
+-- ВСЕ КНОПКИ НА ЭКРАНЕ!
+
+local player = game:GetService("Players").LocalPlayer
+local workspace = game:GetService("Workspace")
+local camera = workspace.CurrentCamera
+local runService = game:GetService("RunService")
+local userInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local virtualUser = game:GetService("VirtualUser")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+
+-- =====================================
+-- ====== БЕССМЕРТИЕ ======
+-- =====================================
+local function GodMode()
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.Health = 100
+            humanoid.MaxHealth = 100
+            humanoid.BreakJointsOnDeath = false
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+        end
+    end
+end
+
+player.CharacterAdded:Connect(function()
+    wait(0.5)
+    GodMode()
+end)
+
+if player.Character then
+    GodMode()
+end
+
+runService.RenderStepped:Connect(function()
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health < 100 then
+            humanoid.Health = 100
+        end
+    end
+end)
+
+-- =====================================
+-- ====== ANTI-AFK ======
+-- =====================================
+player.Idled:Connect(function()
+    if virtualUser then
+        virtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        wait(0.1)
+        virtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end
+end)
+
+-- =====================================
+-- ====== GUI ДЛЯ ТЕЛЕФОНА ======
+-- =====================================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "School102Mobile"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- ===== ГЛАВНАЯ ПАНЕЛЬ =====
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 210, 0, 480)
+mainFrame.Position = UDim2.new(0, 5, 0.25, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = 0.75
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 14)
+frameCorner.Parent = mainFrame
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 38)
+title.BackgroundTransparency = 1
+title.Text = "🏫 ШКОЛА 102 РП"
+title.TextColor3 = Color3.fromRGB(255, 200, 50)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- Статус
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 22)
+statusLabel.Position = UDim2.new(0, 0, 0, 38)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "✅ БЕССМЕРТИЕ ВКЛ"
+statusLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.Parent = mainFrame
+
+-- ===== ФУНКЦИЯ СОЗДАНИЯ КНОПОК =====
+local function CreateMobileButton(text, y, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.92, 0, 0, 38)
+    btn.Position = UDim2.new(0.04, 0, 0, y)
+    btn.BackgroundColor3 = color or Color3.fromRGB(40, 40, 70)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextSize = 14
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = mainFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- =====================================
+-- ====== ОРУЖИЕ (КНОПКИ) ======
+-- =====================================
+local function GiveWeapon(weaponName)
+    -- Сначала проверяем инвентарь
+    for _, v in pairs(player.Backpack:GetChildren()) do
+        if v:IsA("Tool") then
+            v.Parent = player.Character
+            player.Character.Humanoid:EquipTool(v)
+            print("✅ Взято оружие: " .. v.Name)
+            return
+        end
+    end
+    
+    -- Ищем в мире
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") and v.Name:find(weaponName) then
+            v.Parent = player.Character
+            player.Character.Humanoid:EquipTool(v)
+            print("✅ Взято оружие: " .. v.Name)
+            return
+        end
+    end
+    
+    -- Ищем в ReplicatedStorage
+    for _, v in pairs(replicatedStorage:GetDescendants()) do
+        if v:IsA("Tool") and v.Name:find(weaponName) then
+            local clone = v:Clone()
+            clone.Parent = player.Character
+            player.Character.Humanoid:EquipTool(clone)
+            print("✅ Взято оружие: " .. v.Name)
+            return
+        end
+    end
+    
+    print("❌ Оружие не найдено: " .. weaponName)
+end
+
+CreateMobileButton("🔪 КИЛЛЕР (нож)", 65, Color3.fromRGB(180, 30, 30), function()
+    GiveWeapon("Knife")
+end)
+
+CreateMobileButton("🔫 ШЕРИФ (пистолет)", 107, Color3.fromRGB(30, 80, 180), function()
+    GiveWeapon("Gun")
+end)
+
+CreateMobileButton("🗡️ МАФИЯ", 149, Color3.fromRGB(150, 30, 150), function()
+    GiveWeapon("Mafia")
+end)
+
+CreateMobileButton("❌ Убрать оружие", 191, Color3.fromRGB(80, 80, 80), function()
+    for _, v in pairs(player.Character:GetChildren()) do
+        if v:IsA("Tool") then
+            v.Parent = player.Backpack
+        end
+    end
+    print("✅ Оружие убрано")
+end)
+
+-- =====================================
+-- ====== ТЕЛЕПОРТЫ ======
+-- =====================================
+CreateMobileButton("🚪 В ШКОЛУ", 237, Color3.fromRGB(30, 130, 30), function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and (v.Name:find("School") or v.Name:find("Spawn") or v.Name:find("Main")) then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Position + Vector3.new(0, 3, 0))
+                print("✅ Телепорт в школу")
+                return
+            end
+        end
+    end
+end)
+
+CreateMobileButton("🚪 В ДОМ", 279, Color3.fromRGB(30, 130, 30), function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and v.Name:find("House") then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Position + Vector3.new(0, 3, 0))
+                print("✅ Телепорт в дом")
+                return
+            end
+        end
+    end
+end)
+
+-- =====================================
+-- ====== ESP ======
+-- =====================================
+local espEnabled = false
+
+CreateMobileButton("👁️ ESP ВКЛ", 321, Color3.fromRGB(30, 150, 200), function()
+    espEnabled = true
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if not v.Character:FindFirstChild("ESPBox") then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Name = "ESPBox"
+                box.Size = Vector3.new(4, 6, 1)
+                box.Adornee = v.Character.HumanoidRootPart
+                box.AlwaysOnTop = true
+                box.Transparency = 0.2
+                box.Color3 = Color3.fromRGB(255, 0, 0)
+                box.Parent = v.Character.HumanoidRootPart
+                
+                local name = Instance.new("BillboardGui")
+                name.Name = "ESPName"
+                name.Size = UDim2.new(0, 200, 0, 25)
+                name.Adornee = v.Character.Head or v.Character.HumanoidRootPart
+                name.Parent = v.Character.Head or v.Character.HumanoidRootPart
+                
+                local text = Instance.new("TextLabel")
+                text.Size = UDim2.new(1, 0, 1, 0)
+                text.BackgroundTransparency = 1
+                text.Text = v.Name
+                text.TextColor3 = Color3.fromRGB(255, 255, 255)
+                text.TextScaled = true
+                text.Font = Enum.Font.GothamBold
+                text.Parent = name
+            end
+        end
+    end
+    print("✅ ESP включён")
+end)
+
+CreateMobileButton("👁️ ESP ВЫКЛ", 363, Color3.fromRGB(200, 50, 50), function()
+    espEnabled = false
+    for _, v in pairs(Players:GetPlayers()) do
+        if v.Character then
+            local box = v.Character:FindFirstChild("ESPBox")
+            if box then box:Destroy() end
+            local name = v.Character:FindFirstChild("ESPName")
+            if name then name:Destroy() end
+        end
+    end
+    print("✅ ESP выключен")
+end)
+
+-- =====================================
+-- ====== SPEED & JUMP ======
+-- =====================================
+CreateMobileButton("⚡ Speed 30", 405, Color3.fromRGB(200, 150, 30), function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = 30
+        print("✅ Скорость 30")
+    end
+end)
+
+CreateMobileButton("🦘 Прыжок", 447, Color3.fromRGB(150, 100, 200), function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.JumpPower = 80
+        print("✅ Прыжок включён")
+    end
+end)
+
+-- =====================================
+-- ====== ДОПОЛНИТЕЛЬНЫЕ КНОПКИ (СПРАВА) ======
+-- =====================================
+local quickPanel = Instance.new("Frame")
+quickPanel.Size = UDim2.new(0, 60, 0, 180)
+quickPanel.Position = UDim2.new(0.92, -5, 0.4, 0)
+quickPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+quickPanel.BackgroundTransparency = 0.6
+quickPanel.BorderSizePixel = 0
+quickPanel.Parent = screenGui
+
+local quickCorner = Instance.new("UICorner")
+quickCorner.CornerRadius = UDim.new(0, 10)
+quickCorner.Parent = quickPanel
+
+local quickTitle = Instance.new("TextLabel")
+quickTitle.Size = UDim2.new(1, 0, 0, 25)
+quickTitle.BackgroundTransparency = 1
+quickTitle.Text = "⚡ БЫСТР"
+quickTitle.TextColor3 = Color3.fromRGB(255, 200, 100)
+quickTitle.TextSize = 11
+quickTitle.Font = Enum.Font.GothamBold
+quickTitle.Parent = quickPanel
+
+local function CreateQuickBtn(text, y, color, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.85, 0, 0, 28)
+    btn.Position = UDim2.new(0.075, 0, 0, y)
+    btn.BackgroundColor3 = color or Color3.fromRGB(60, 60, 100)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextSize = 11
+    btn.Font = Enum.Font.Gotham
+    btn.BorderSizePixel = 0
+    btn.Parent = quickPanel
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+CreateQuickBtn("🔪", 30, Color3.fromRGB(180, 30, 30), function()
+    GiveWeapon("Knife")
+end)
+
+CreateQuickBtn("🔫", 62, Color3.fromRGB(30, 80, 180), function()
+    GiveWeapon("Gun")
+end)
+
+CreateQuickBtn("🏫", 94, Color3.fromRGB(30, 130, 30), function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and (v.Name:find("School") or v.Name:find("Spawn")) then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Position + Vector3.new(0, 3, 0))
+                return
+            end
+        end
+    end
+end)
+
+CreateQuickBtn("🏠", 126, Color3.fromRGB(30, 130, 30), function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Part") and v.Name:find("House") then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = CFrame.new(v.Position + Vector3.new(0, 3, 0))
+                return
+            end
+        end
+    end
+end)
+
+CreateQuickBtn("⚡", 158, Color3.fromRGB(200, 150, 30), function()
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.WalkSpeed = 30
+    end
+end)
+
+-- =====================================
+-- ====== ОТКРЫТИЕ МЕНЮ ======
+-- =====================================
+local lastTap = 0
+userInputService.TouchTap:Connect(function()
+    if userInputService.TouchEnabled then
+        local currentTime = tick()
+        if currentTime - lastTap < 0.5 then
+            mainFrame.Visible = not mainFrame.Visible
+            quickPanel.Visible = not quickPanel.Visible
+        end
+        lastTap = currentTime
+    end
+end)
+
+print("✅ ШКОЛА 102 РП ДЛЯ ТЕЛЕФОНА ЗАГРУЖЕНО!")
+print("📱 Двойной тап - открыть/закрыть меню")
+print("🔫 Нажимай на кнопки пальцем")
+print("🛡️ Ты бессмертен!")
