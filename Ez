@@ -1,0 +1,234 @@
+--[[
+    Clean Roblox Studio menu (GUI only)
+    Place this LocalScript in StarterPlayer > StarterPlayerScripts.
+    This creates a draggable menu with harmless placeholder tabs:
+    Visual, Cosmetics, Shaders, Radio, Themes, Utilities.
+
+    Aim, WH/ESP, Movement and Animations are intentionally not included.
+    This script does not modify gameplay, inspect other players, or provide exploits.
+]]
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local oldGui = playerGui:FindFirstChild("CleanMenu")
+if oldGui then
+    oldGui:Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CleanMenu"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.fromOffset(620, 390)
+main.Position = UDim2.new(0.5, -310, 0.5, -195)
+main.BackgroundColor3 = Color3.fromRGB(28, 27, 34)
+main.BackgroundTransparency = 0.08
+main.BorderSizePixel = 0
+main.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 14)
+mainCorner.Parent = main
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(175, 160, 185)
+mainStroke.Transparency = 0.35
+mainStroke.Thickness = 1.3
+mainStroke.Parent = main
+
+local top = Instance.new("Frame")
+top.Name = "TopBar"
+top.Size = UDim2.new(1, 0, 0, 48)
+top.BackgroundColor3 = Color3.fromRGB(20, 19, 25)
+top.BorderSizePixel = 0
+top.Parent = main
+
+local topCorner = Instance.new("UICorner")
+topCorner.CornerRadius = UDim.new(0, 14)
+topCorner.Parent = top
+
+local title = Instance.new("TextLabel")
+title.BackgroundTransparency = 1
+title.Position = UDim2.fromOffset(18, 0)
+title.Size = UDim2.new(1, -80, 1, 0)
+title.Font = Enum.Font.GothamBold
+title.Text = "MONVISUAL"
+title.TextColor3 = Color3.fromRGB(245, 240, 248)
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = top
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(32, 32)
+close.Position = UDim2.new(1, -42, 0, 8)
+close.BackgroundColor3 = Color3.fromRGB(75, 65, 80)
+close.Text = "×"
+close.TextColor3 = Color3.new(1, 1, 1)
+close.TextSize = 22
+close.Font = Enum.Font.Gotham
+close.Parent = top
+Instance.new("UICorner", close).CornerRadius = UDim.new(1, 0)
+
+close.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+local sidebar = Instance.new("Frame")
+sidebar.Name = "Sidebar"
+sidebar.Position = UDim2.fromOffset(12, 60)
+sidebar.Size = UDim2.fromOffset(150, 318)
+sidebar.BackgroundColor3 = Color3.fromRGB(35, 33, 42)
+sidebar.BorderSizePixel = 0
+sidebar.Parent = main
+Instance.new("UICorner", sidebar).CornerRadius = UDim.new(0, 10)
+
+local sideLayout = Instance.new("UIListLayout")
+sideLayout.Padding = UDim.new(0, 6)
+sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+sideLayout.Parent = sidebar
+
+local sidePadding = Instance.new("UIPadding")
+sidePadding.PaddingTop = UDim.new(0, 10)
+sidePadding.PaddingLeft = UDim.new(0, 8)
+sidePadding.PaddingRight = UDim.new(0, 8)
+sidePadding.Parent = sidebar
+
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.Position = UDim2.fromOffset(174, 60)
+content.Size = UDim2.new(1, -186, 1, -72)
+content.BackgroundColor3 = Color3.fromRGB(38, 36, 45)
+content.BorderSizePixel = 0
+content.Parent = main
+Instance.new("UICorner", content).CornerRadius = UDim.new(0, 10)
+
+local pageTitle = Instance.new("TextLabel")
+pageTitle.Name = "PageTitle"
+pageTitle.BackgroundTransparency = 1
+pageTitle.Position = UDim2.fromOffset(16, 10)
+pageTitle.Size = UDim2.new(1, -32, 0, 30)
+pageTitle.Font = Enum.Font.GothamBold
+pageTitle.Text = "Visual"
+pageTitle.TextColor3 = Color3.fromRGB(245, 240, 248)
+pageTitle.TextSize = 17
+pageTitle.TextXAlignment = Enum.TextXAlignment.Left
+pageTitle.Parent = content
+
+local divider = Instance.new("Frame")
+divider.Position = UDim2.fromOffset(16, 46)
+divider.Size = UDim2.new(1, -32, 0, 1)
+divider.BackgroundColor3 = Color3.fromRGB(100, 90, 110)
+divider.BackgroundTransparency = 0.35
+divider.BorderSizePixel = 0
+divider.Parent = content
+
+local pageBody = Instance.new("TextLabel")
+pageBody.Name = "PageBody"
+pageBody.BackgroundTransparency = 1
+pageBody.Position = UDim2.fromOffset(16, 60)
+pageBody.Size = UDim2.new(1, -32, 1, -76)
+pageBody.Font = Enum.Font.Gotham
+pageBody.Text = "Обычный раздел интерфейса.\nЗдесь можно разместить безопасные настройки проекта."
+pageBody.TextColor3 = Color3.fromRGB(215, 208, 220)
+pageBody.TextSize = 14
+pageBody.TextWrapped = true
+pageBody.TextXAlignment = Enum.TextXAlignment.Left
+pageBody.TextYAlignment = Enum.TextYAlignment.Top
+pageBody.Parent = content
+
+local pages = {
+    "Visual",
+    "Cosmetics",
+    "Shaders",
+    "Radio",
+    "Themes",
+    "Utilities",
+}
+
+local descriptions = {
+    Visual = "Настройки внешнего вида интерфейса.",
+    Cosmetics = "Косметические настройки и оформление.",
+    Shaders = "Визуальные эффекты вашего проекта.",
+    Radio = "Раздел для элементов управления музыкой проекта.",
+    Themes = "Выбор цветовой темы интерфейса.",
+    Utilities = "Полезные безопасные настройки интерфейса.",
+}
+
+local function showPage(name)
+    pageTitle.Text = name
+    pageBody.Text = descriptions[name] or "Раздел пока пуст."
+    for _, child in ipairs(sidebar:GetChildren()) do
+        if child:IsA("TextButton") then
+            child.BackgroundColor3 = child.Name == name
+                and Color3.fromRGB(100, 83, 112)
+                or Color3.fromRGB(48, 45, 56)
+        end
+    end
+end
+
+for index, name in ipairs(pages) do
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.LayoutOrder = index
+    button.Size = UDim2.new(1, 0, 0, 39)
+    button.BackgroundColor3 = index == 1
+        and Color3.fromRGB(100, 83, 112)
+        or Color3.fromRGB(48, 45, 56)
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = true
+    button.Font = Enum.Font.Gotham
+    button.Text = "  " .. name
+    button.TextColor3 = Color3.fromRGB(235, 228, 240)
+    button.TextSize = 13
+    button.TextXAlignment = Enum.TextXAlignment.Left
+    button.Parent = sidebar
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
+
+    button.MouseButton1Click:Connect(function()
+        showPage(name)
+    end)
+end
+
+-- Drag the menu by its top bar.
+local dragging = false
+local dragStart
+local startPosition
+
+top.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPosition = main.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
